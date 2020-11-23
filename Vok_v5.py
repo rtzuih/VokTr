@@ -1,4 +1,5 @@
 import random
+from httpcore import _exceptions
 from googletrans import Translator
 from fuzzywuzzy import fuzz
 import pandas as pd
@@ -7,23 +8,23 @@ import pandas as pd
 
 try:
     with open("vokabeln.csv", "r") as csvfile:
-        vocabulary_df = pd.read_csv(csvfile, sep=";")
-        vokabeln_g = [item for item in vocabulary_df["German"]]
-        vokabeln_e = [item for item in vocabulary_df["English"]]
+        voc_df = pd.read_csv(csvfile, sep=";")
 
 
 except FileNotFoundError:
     print("No vocabulary data found")
-    vokabeln_g = []
-    vokabeln_e = []
+    with open("vokabeln.csv", "w") as csvfile:
+        voc_df = pd.DataFrame()
+        voc_df.to_csv(csvfile, sep=";", index=False)
 
 
 def add_vokabulary(ger_v, eng_v):
-    vokabeln_g.append(ger_v)
-    vokabeln_e.append(eng_v)
-    with open("vokabeln.csv", "w", newline="") as csvfile:
-        vocabulary = pd.DataFrame({"German": vokabeln_g, "English": vokabeln_e})
-        vocabulary.to_csv(csvfile, sep=";", index=False)
+    with open("vokabeln.csv", "w", newline="") as f:
+        voc_df.append([ger_v, eng_v], ignore_index=True)
+        if input(voc_df):
+            voc_df.to_csv(f, sep=";", index=False)
+        else:
+            print("nope")
 
 
 HELP_MSG = """
@@ -39,8 +40,6 @@ Du kannst folgende Befehle verwenden:
 
 class Trainer:
     def __init__(self, username):
-        self.reihenfolge = list(i for i in range(len(vokabeln_g)))
-        random.shuffle(self.reihenfolge)
         try:
             with open("users.csv", "r") as csvfile:
                 users_df = pd.read_csv(csvfile, sep=";")
@@ -63,89 +62,67 @@ class Trainer:
     def userdataanalysis(self):
         pass
 
-    def train(self):
+    def menu(self):
         while True:
             command = input("What do you want to do? ")
 
-            if command == "exit" or command == "Exit" or command == "quit" or command == "beenden" or command == "Beenden":
+            if command == "exit":
                 break
-            elif command == "1" or command == "train" or command == "abfrage":
-                if len(self.reihenfolge) == 0:
-                    self.reihenfolge = list(i for i in range(len(vokabeln_e)))
-                    random.shuffle(self.reihenfolge)
+            elif command == "1":
+                Trainer.train(self)
 
-                while len(self.reihenfolge) != 0:
-                    if random.randint(0, 1) == 0:
-
-                        user_input = input(
-                            f"\nWas ist die Englische Übersetzung von {vokabeln_g[self.reihenfolge[0]]} ")
-                        print(fuzz.ratio(user_input, vokabeln_e[self.reihenfolge[0]]))
-                        if user_input == "exit" or user_input == "Exit" or user_input == "quit" or user_input == "beenden" or user_input == "Beenden":
-                            random.shuffle(self.reihenfolge)
-                            skipped_vocabulary = self.reihenfolge[0]
-                            while self.reihenfolge[0] == skipped_vocabulary:
-                                random.shuffle(self.reihenfolge)
-                            print("\n")
-                            break
-
-                        elif user_input == vokabeln_e[self.reihenfolge[0]]:
-                            print("Richtig!!!")
-                            self.reihenfolge.remove(self.reihenfolge[0])
-                        elif user_input == "skip":
-                            print(f"{vokabeln_g[self.reihenfolge[0]]} has been skipped")
-                            skipped_vocabulary = self.reihenfolge[0]
-                            while self.reihenfolge[0] == skipped_vocabulary:
-                                random.shuffle(self.reihenfolge)
-                        else:
-                            print("Leider falsch.")
-                            if fuzz.ratio(user_input, vokabeln_e[self.reihenfolge[0]]) > 60:
-                                pass
-                            else:
-                                random.shuffle(self.reihenfolge)
-
-                    else:
-                        user_input = input(
-                            f"\nWas ist die Deutsche Übersetzung von {vokabeln_e[self.reihenfolge[0]]} ")
-                        if user_input == "exit" or user_input == "Exit" or user_input == "quit" or user_input == "beenden" or user_input == "Beenden":
-                            random.shuffle(self.reihenfolge)
-                            skipped_vocabulary = self.reihenfolge[0]
-                            while self.reihenfolge[0] == skipped_vocabulary:
-                                random.shuffle(self.reihenfolge)
-                            print("\n")
-                            break
-
-                        elif user_input == vokabeln_g[self.reihenfolge[0]]:
-                            print("Richtig!!!")
-                            self.reihenfolge.remove(self.reihenfolge[0])
-                        elif user_input == "skip":
-                            print(f"{vokabeln_e[self.reihenfolge[0]]} has been skipped")
-                            skipped_vocabulary = self.reihenfolge[0]
-                            while self.reihenfolge[0] == skipped_vocabulary:
-                                random.shuffle(self.reihenfolge)
-                        else:
-                            print("Leider falsch.")
-                            random.shuffle(self.reihenfolge)
-
-            elif command == "listv" or command == "vokabelliste" or command == "Vokabelliste" or command == "2":
+            elif command == "2":
                 # print("\n" + "\n".join("{} - {}".format(vg, ve) for vg, ve in zip(vokabeln_g, vokabeln_e)) + "\n")
-                print("\n".join(f"{vokabeln_g[i]} - {vokabeln_e[i]}" for i in range(len(vokabeln_e))))
+                print("\n".join(f"{voc_df['Ger'][i]} - {voc_df['Eng'][i]}" for i in range(len(voc_df['Ger']))))
 
-            elif command == "add" or command == "addv" or command == "addvocabulary" or command == "3":
+            elif command == "3":
                 vokg = input("Neue Deutsche Vokabel")
                 voke = input("Neue Englische Vokabel")
                 add_vokabulary(vokg, voke)
-                self.reihenfolge = list(i for i in range(len(vokabeln_g)))
-                random.shuffle(self.reihenfolge)
 
             elif command[:4] == "!trl":
-                print(f"Übersetzung ihrer Eingabe:\n{Translator().translate(command[5:-3], command[-2:]).text}\n")
+                try:
+                    print(f"Übersetzung ihrer Eingabe:\n{Translator().translate(command[5:-3], command[-2:]).text}\n")
+                except _exceptions.ConnectError:
+                    print("Dein Text konnte nicht übersetzt werden.\nHast du vielleicht keine Internetverbindung?")
 
             elif command[:4] == "help":
                 print(HELP_MSG)
             else:
                 print("\nType 'help' for help\n")
 
+    def train(self):
+        order = list(i for i in range(len(voc_df["Ger"])))
+        random.shuffle(order)
+
+        mode = random.randint(0, 1)
+        while len(order) != 0:
+
+            user_input = input(
+                f"\nWas ist die {'Englische' if mode == 0 else 'Deutsche'} Übersetzung von {voc_df['Ger' if mode == 0 else 'Eng'][order[0]]} ")
+
+            if user_input.lower() == "exit":
+                break
+
+            elif user_input == voc_df['Eng' if mode == 0 else 'Ger'][order[0]]:
+                print("Richtig!!!")
+                mode = random.randint(0, 1)
+                order.remove(order[0])
+            elif user_input == "skip":
+                print(f"{voc_df['Ger' if mode == 0 else 'Eng'][order[0]]} has been skipped")
+                skipped_vocabulary = order[0]
+                while order[0] == skipped_vocabulary:
+                    random.shuffle(order)
+            else:
+                if fuzz.ratio(user_input.lower(), voc_df['Eng' if mode == 0 else 'Ger'][order[0]].lower()) > 75:
+                    print("Hast du dich vielleicht nur vertippt?\n")
+                else:
+                    print("Leider falsch.")
+                    
+
+                    random.shuffle(order)
+
 
 username = input("Was ist dein Nutzername? ")
 
-Trainer(username).train()
+Trainer(username).menu()
