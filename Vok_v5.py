@@ -3,6 +3,7 @@ from httpcore import _exceptions
 from googletrans import Translator
 from fuzzywuzzy import fuzz
 import pandas as pd
+from termcolor import colored
 
 # Unit = input("Aus welcher Unit möchtest du Vokabeln lernen? ")
 
@@ -124,13 +125,13 @@ class Trainer:
         while len(order) != 0:
 
             user_input = input(
-                f"\nWas ist die {'Englische' if mode == 0 else 'Deutsche'} Übersetzung von {voc['Ger' if mode == 0 else 'Eng'][order[0]]} ")
+                f"\nWas ist die {'Englische' if mode == 0 else 'Deutsche'} Übersetzung von " + colored(f"{voc['Ger' if mode == 0 else 'Eng'][order[0]]} ", "blue"))
 
             if user_input.lower() == "exit":
                 break
 
             elif user_input == voc['Eng' if mode == 0 else 'Ger'][order[0]]:
-                print("Richtig!!!")
+                print(colored("Richtig!!!", "green"))
                 mode = random.randint(0, 1)
                 order.remove(order[0])
             elif user_input == "skip":
@@ -140,14 +141,15 @@ class Trainer:
                     random.shuffle(order)
             else:
                 if fuzz.ratio(user_input.lower(), voc['Eng' if mode == 0 else 'Ger'][order[0]].lower()) > 75:
-                    print("Hast du dich vielleicht nur vertippt?\n")
+                    print(colored("Hast du dich vielleicht nur vertippt?\n", "yellow"))
                 else:
-                    print("Leider falsch.")
+                    print(colored("Leider falsch.", "red"))
                     self.users_df.loc[order[0], username] = self.users_df.loc[order[0], username] + 1
                     random.shuffle(order)
 
         with open("users.csv", "w", newline="") as csvfile:
             self.users_df.to_csv(csvfile, sep=";", index=False)
+
         if self.users_df[username].any():
             if input("Willst du die Vokabeln wissen, mit denen du Schwierigkeiten hast? (y/n) ") == "y":
                 hard = []
