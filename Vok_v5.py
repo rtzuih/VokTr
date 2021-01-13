@@ -3,11 +3,11 @@ import pandas as pd
 import sys
 from fuzzywuzzy import fuzz
 from termcolor import colored
-from colorama import init
 from time import sleep
+from colorama import init
 
 
-init()
+init() #initialises ANSI-colorcodes for windows, no effect on Linux
 
 # Unit = input("Aus welcher Unit möchtest du Vokabeln lernen? ")
 
@@ -18,6 +18,7 @@ Du kannst folgende Befehle verwenden:
 "1" um dich alle Vokabeln abfragen zu lassen.
 "2" um dir alle Vokabeln anzeigen zu lassen
 "3" um Vokabeln hinzuzufügen
+"exit" um das Programm zu beenden
 
 """
 
@@ -87,6 +88,7 @@ class Trainer:
                 self.menu()
         else:
             self.menu()
+        print("Du kannst folgende Befehele verwenden:\n\n1 - Training\n2 - Vokabeln anzeigen\n3 - Vokabeln hinzufügen\nhelp - Hilfe anzeigen\nexit - programm beenden\n")
 
     def menu(self):
 
@@ -117,6 +119,7 @@ class Trainer:
         random.shuffle(order)
 
         mode = random.randint(0, 1)
+        print("\nDu kannst folgende Befehle verwenden:\n\nskip - Vokabel überspringen\n? - Lösung anzeigen \nexit um ins Menü zurückzukommen")
         while len(order) != 0:
 
             print(
@@ -132,6 +135,11 @@ class Trainer:
                 order.remove(order[0])
             elif user_input == "skip":
                 print(f"{voc['Ger' if mode == 0 else 'Eng'][order[0]]} has been skipped")
+                skipped_vocabulary = order[0]
+                while order[0] == skipped_vocabulary:
+                    random.shuffle(order)
+            elif user_input == "?":
+                print(colored(f"{voc['Ger' if mode == 0 else 'Eng'][order[0]]}", "blue") + " - " + colored(f"{voc['Eng' if mode == 0 else 'Ger'][order[0]]}", "magenta"))
                 skipped_vocabulary = order[0]
                 while order[0] == skipped_vocabulary:
                     random.shuffle(order)
@@ -155,7 +163,7 @@ class Trainer:
                 print("\n".join(colored(f"{self.voc_df['Ger'][i]}", "blue") + " - " + colored(f"{self.voc_df['Eng'][i]}", "magenta") for i in hard))
         else:
             print(colored("Super, du bist fertig und hast keine Fehler gemacht!!!", "green"))
-
+        print("Du kannst folgende Befehele verwenden:\n\n1 - Training\n2 - Vokabeln anzeigen\n3 - Vokabeln hinzufügen\nhelp - Hilfe anzeigen\nexit - programm beenden\n")
     def add_vokabulary(self, ger_v, eng_v):
 
 
